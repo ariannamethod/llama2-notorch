@@ -1,8 +1,5 @@
 ## llama2-notorch
 
-<p align="center">
-  <img src="assets/llama_cute.jpg" width="300" height="300" alt="Cute Llama">
-</p>
 
 Train and inference a baby [Llama 2](https://ai.meta.com/llama/) model — **no pip dependencies**. [notorch](https://github.com/ariannamethod/notorch) is the engine.
 
