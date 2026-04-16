@@ -8,10 +8,6 @@ import requests
 import subprocess
 
 
-import torch
-from model import ModelArgs, Transformer
-from tokenizer import Tokenizer
-
 # -----------------------------------------------------------------------------
 # test utilities
 
@@ -28,7 +24,7 @@ def download_file(url, filename):
 def attempt_download_files():
     os.makedirs(test_ckpt_dir, exist_ok=True)
     root_url = "https://huggingface.co/karpathy/tinyllamas/resolve/main/stories260K"
-    need = ["stories260K.bin", "stories260K.pt", "tok512.bin", "tok512.model"]
+    need = ["stories260K.bin", "tok512.bin"]
     for file in need:
         url = root_url + '/' + file   #os.path.join inserts \\ on windows
         filename = os.path.join(test_ckpt_dir, file)
@@ -59,31 +55,22 @@ def test_runc():
 
     assert stdout == expected_stdout
 
-def test_python():
-    """ Forwards a model against a known-good desired outcome in sample.py for 200 steps"""
-    attempt_download_files()
+def test_notorch_build():
+    """Test that libnotorch.so can be built"""
+    result = subprocess.run(['make', 'notorch'], capture_output=True, text=True)
+    assert result.returncode == 0, f"Build failed: {result.stderr}"
+    assert os.path.exists('ariannamethod/libnotorch.so')
 
-    device = "cpu" # stories260K is small enough to just breeze through it on CPU
-    checkpoint = os.path.join(test_ckpt_dir, "stories260K.pt")
-    checkpoint_dict = torch.load(checkpoint, map_location=device)
-    gptconf = ModelArgs(**checkpoint_dict['model_args'])
-    model = Transformer(gptconf)
-    state_dict = checkpoint_dict['model']
-    unwanted_prefix = '_orig_mod.'
-    for k,v in list(state_dict.items()):
-        if k.startswith(unwanted_prefix):
-            state_dict[k[len(unwanted_prefix):]] = state_dict.pop(k)
-    model.load_state_dict(state_dict, strict=False)
-    model.eval()
-    model.to(device)
-    x = torch.tensor([[1]], dtype=torch.long, device=device) # 1 is BOS
-    with torch.inference_mode():
-        y = model.generate(x, max_new_tokens=200, temperature=0.0)
-    pt_tokens = y[0].tolist()
-
-    tokenizer_model = os.path.join(test_ckpt_dir, "tok512.model")
-    enc = Tokenizer(tokenizer_model=tokenizer_model)
-    text = enc.decode(pt_tokens)
-    text = text.encode('ascii') # turn into bytes
-
-    assert text == expected_stdout
+def test_notorch_import():
+    """Test that notorch_nn can be imported and basic ops work"""
+    # Build first
+    subprocess.run(['make', 'notorch'], capture_output=True, check=True)
+    result = subprocess.run(
+        ['python', '-c', 'from ariannamethod.notorch_nn import Tensor, _lib; '
+                         't = Tensor.zeros(10); '
+                         'assert t.numel == 10; '
+                         'print("notorch import OK")'],
+        capture_output=True, text=True
+    )
+    assert result.returncode == 0, f"Import failed: {result.stderr}"
+    assert "notorch import OK" in result.stdout

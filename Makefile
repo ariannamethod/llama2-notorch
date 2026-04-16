@@ -2,6 +2,15 @@
 # example override to clang: make run CC=clang
 CC = gcc
 
+# ── notorch (the engine) ──
+# Build libnotorch shared library for training via ctypes
+.PHONY: notorch
+notorch:
+	cd ariannamethod && $(CC) -std=c11 -O2 -fPIC -shared -o libnotorch.so notorch.c -lm
+	@echo "Built: ariannamethod/libnotorch.so"
+
+# ── C inference (run.c / runq.c — already pure C) ──
+
 # the most basic way of building that is most likely to work on most systems
 .PHONY: run
 run: run.c
@@ -52,6 +61,14 @@ runompgnu:
 	$(CC) -Ofast -fopenmp -std=gnu11 run.c  -lm  -o run
 	$(CC) -Ofast -fopenmp -std=gnu11 runq.c  -lm  -o runq
 
+# ── Training ──
+
+.PHONY: train
+train: notorch
+	python train.py
+
+# ── Tests ──
+
 # run all tests
 .PHONY: test
 test:
@@ -74,3 +91,4 @@ testcc:
 clean:
 	rm -f run
 	rm -f runq
+	rm -f ariannamethod/libnotorch.so ariannamethod/libnotorch.dylib

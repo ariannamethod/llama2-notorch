@@ -40,6 +40,10 @@ jobs:
           python -m pip install --upgrade pip
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
+      - name: Build notorch
+        run: |
+          make notorch
+
       - name: Build
         id: make_build
         run: |
@@ -77,6 +81,10 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+      - name: Build notorch
+        run: |
+          cd ariannamethod && cc -std=c11 -O2 -fPIC -shared -o libnotorch.dylib notorch.c -lm
 
       - name: Build clang
         id: make_build_clang
