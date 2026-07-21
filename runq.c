@@ -101,10 +101,10 @@ void malloc_run_state(RunState* s, Config* p) {
     s->q = calloc(p->dim, sizeof(float));
     s->k = calloc(kv_dim, sizeof(float));
     s->v = calloc(kv_dim, sizeof(float));
-    s->att = calloc(p->n_heads * p->seq_len, sizeof(float));
+    s->att = calloc((size_t)p->n_heads * p->seq_len, sizeof(float));
     s->logits = calloc(p->vocab_size, sizeof(float));
-    s->key_cache = calloc(p->n_layers * p->seq_len * kv_dim, sizeof(float));
-    s->value_cache = calloc(p->n_layers * p->seq_len * kv_dim, sizeof(float));
+    s->key_cache = calloc((size_t)p->n_layers * p->seq_len * kv_dim, sizeof(float));
+    s->value_cache = calloc((size_t)p->n_layers * p->seq_len * kv_dim, sizeof(float));
     // ensure all mallocs went fine
     if (!s->x || !s->xb || !s->xb2 || !s->hb || !s->hb2 || !s->q
      || !s->k || !s->v || !s->att || !s->logits || !s->key_cache
@@ -201,7 +201,7 @@ void memory_map_weights(TransformerWeights *w, Config* p, void* ptr, uint8_t sha
     ptr = (void*)fptr; // now cast the pointer back to void*
     w->q_tokens = init_quantized_tensors(&ptr, 1, p->vocab_size * p->dim);
     // dequantize token embedding table
-    w->token_embedding_table = malloc(p->vocab_size * p->dim * sizeof(float));
+    w->token_embedding_table = malloc((size_t)p->vocab_size * p->dim * sizeof(float));
     dequantize(w->q_tokens, w->token_embedding_table, p->vocab_size * p->dim);
 
     w->wq = init_quantized_tensors(&ptr, p->n_layers, p->dim * (p->n_heads * head_size));
